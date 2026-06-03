@@ -56,8 +56,11 @@ Read-list (video_id | views | clickbait?):
 For each video, pull the cleaned transcript in one step:
   bash <SKILL_DIR>/scripts/yt-captions.sh <video_id>
 - It prints the cleaned transcript to stdout.
-- If it exits non-zero / prints "NO_CAPTIONS", that video has no usable English
-  captions — skip it and pull the next from the list (backfill).
+- If it exits non-zero / prints "NO_CAPTIONS", that video has no usable captions
+  in any language — skip it and pull the next from the list (backfill).
+- Transcripts come back in the video's ORIGINAL language (e.g. Hindi for many
+  Indian-creator videos), not just English. Read non-English transcripts directly
+  — do not skip a video for being in another language.
 
 Then READ the transcripts and synthesise. Treat views as SOFT context, not
 truth: a hugely popular video isn't automatically right, and a low-view one
@@ -73,12 +76,15 @@ days" video whose own transcript admits it takes weeks).
 
 Return: key insights, each with a (title + URL + views) citation, and a flag on
 anything that reads as marketing fluff or whose content didn't live up to a
-clickbait title.
+clickbait title. End with a line `READ: <video_ids you actually pulled a
+transcript for>` (comma-separated) so the coordinator can total watch-time saved.
 ```
 
 ### Phase 3 — Coordinator: consolidate
 
 Merge the per-angle briefs into the final deliverable, preserving citations. The deliverable is **whatever the user asked for** — a written answer in the reply, or a file at a path the user specifies. Don't assume any particular notes system or write location; if the user wants it saved, use the path they gave.
+
+**Then report watch-time saved.** Gather the `READ:` ids from every angle, dedupe, and sum the `duration_seconds` those videos already carry from `yt-search.sh` (you have them in context — don't re-fetch). Sum with python and close the deliverable with one line: `Read N videos — saved Xh Ym of watch time` (the runtime you'd have spent watching). Count each video once; exclude caption-less skips. Example: `python3 -c "s=[1095,3753,608]; t=sum(s); print(f'{t//3600}h {t%3600//60}m')"`.
 
 ## Gotchas
 
@@ -103,7 +109,7 @@ Merge the per-angle briefs into the final deliverable, preserving citations. The
 All live in `<SKILL_DIR>/scripts/` — reference them by absolute path (a subagent's cwd is never the skill dir). All accept the optional `YT_DLP_COOKIES_FROM_BROWSER` env var.
 
 - **`yt-search.sh "<query>" [max]`** — searches YouTube via yt-dlp (no API key/quota/account). TSV of `video_id, duration_seconds, view_count, channel, title`. One request per query. The coordinator's discovery + curation input.
-- **`yt-captions.sh <id-or-url>`** — pulls English auto-subtitles and prints the **cleaned** transcript to stdout in one step (download + clean combined). Exit 2 + `NO_CAPTIONS` if none. The subagent's per-video call.
+- **`yt-captions.sh <id-or-url>`** — pulls the video's **original-language** subtitles (detects the language, prefers manual then auto, falls back to English) and prints the **cleaned** transcript to stdout in one step (download + clean combined). Uses the `android_vr` player client to dodge the JS-challenge that caused false `NO_CAPTIONS`. Exit 2 + `NO_CAPTIONS` only if no captions exist in any language. The subagent's per-video call.
 - **`video-metrics.sh <url-or-id> ...`** — *optional.* TSV of `video_id, duration_seconds, view_count, like_count, title`. A heavier per-video fetch; use only when you want like counts beyond what search already gives.
 - **`clean-vtt.sh <file.vtt>`** — strips VTT tags, timestamps, headers and dedupes auto-sub repeats; prints clean transcript to stdout. Underlies `yt-captions.sh`; call it directly only if you pulled a `.vtt` yourself.
 
@@ -116,3 +122,4 @@ All live in `<SKILL_DIR>/scripts/` — reference them by absolute path (a subage
 - [ ] One subagent per angle, parallel, given its read-list + absolute `<SKILL_DIR>`
 - [ ] Subagents pull cleaned transcripts via `yt-captions.sh`, skip caption-less + backfill
 - [ ] Briefs consolidated with citations preserved, written to wherever the user asked
+- [ ] Watch-time saved reported — summed `duration_seconds` of videos actually read, shown as `Xh Ym`
