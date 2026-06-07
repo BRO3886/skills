@@ -18,6 +18,9 @@ Same pipeline, but the search runs on `yt-dlp` too — **no API key, no account,
 ### `siddhartha-go`
 My Go backend coding conventions and architecture patterns — project structure, service/repository layering, Uber Fx DI, Ent ORM, error handling, testing with in-memory repos, and the preferred stack. Useful as a style guide for Go backend work or for keeping collaborators consistent.
 
+### `siddhartha-flutter`
+My Flutter app conventions and architecture — feature-first MVVM (View → ViewModel → Repository → data-sources), the preferred stack (Riverpod 3, freezed, dio + retrofit, go_router, drift), the three-model (DTO/domain/view-state) wall, a sealed `Failure` error pipeline, opt-in offline-first sync, and a copy-per-feature vertical slice. Useful as a style guide for Flutter work or for keeping collaborators consistent.
+
 ## Installing a skill
 
 Copy the skill folder into your agent's skills directory. For Claude Code:
