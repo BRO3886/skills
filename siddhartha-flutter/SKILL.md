@@ -1,11 +1,11 @@
 ---
 name: siddhartha-flutter
-description: "Siddhartha's Flutter app conventions and architecture patterns. Use when writing Flutter/Dart app code, scaffolding a new Flutter feature or whole project, designing state management, networking, offline-first sync, or dependency injection, or making architecture decisions in a Flutter project. Also use when reviewing Flutter PRs, structuring packages, or when someone asks about Flutter project conventions. Ensures consistency between Siddhartha and Gagan on Settld and shared Flutter work."
+description: "Siddhartha's Flutter app conventions and architecture patterns. Use when writing Flutter/Dart app code, scaffolding a new Flutter feature or whole project, designing state management, networking, offline-first sync, or dependency injection, or making architecture decisions in a Flutter project. Also use when reviewing Flutter PRs, structuring packages, or when someone asks about Flutter project conventions. Ensures consistency across Flutter projects and shared work."
 ---
 
 # Siddhartha's Flutter Style Guide
 
-This guide encodes the architecture, conventions, and preferred stack for Siddhartha's Flutter apps. Follow these patterns for all Flutter work on Settld and shared projects. The goal is a single, repeatable shape so that building a new feature is mechanical and an agent can clone the pattern without re-deciding architecture each time.
+This guide encodes the architecture, conventions, and preferred stack for Siddhartha's Flutter apps. Follow these patterns for all Flutter work and shared projects. The goal is a single, repeatable shape so that building a new feature is mechanical and an agent can clone the pattern without re-deciding architecture each time.
 
 This is a Flutter-native guide. It does not borrow backend layering — Flutter is a reactive, declarative widget tree, and the patterns here are built for that, not translated from server code.
 
