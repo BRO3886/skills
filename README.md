@@ -15,6 +15,12 @@ Same pipeline, but the search runs on `yt-dlp` too — **no API key, no account,
 
 - Requires: `uv` only (the scripts call `uvx yt-dlp@latest`).
 
+### `youtube-vault-note`
+Turn a single YouTube video into a markdown note in your notes vault — a note designed to **replace watching the video**. Pulls the original-language transcript (with per-minute timestamp markers for jumping back in), distils key points and any frameworks at actionable depth, searches your vault for notes the video connects to, writes a personalized first-person "why this matters to me" section with inline wikilinks, and ends with an honest watch/skip verdict. Vault-agnostic: resolves the vault from `$OBSIDIAN_VAULT`/`$VAULT_PATH`, the cwd, or by asking once.
+
+- Requires: `uv` only (the scripts call `uvx yt-dlp@latest`).
+- Distinct from the research skills above: those sweep many videos on a topic; this deep-captures one video into your vault.
+
 ### `siddhartha-go`
 My Go backend coding conventions and architecture patterns — project structure, service/repository layering, Uber Fx DI, Ent ORM, error handling, testing with in-memory repos, and the preferred stack. Useful as a style guide for Go backend work or for keeping collaborators consistent.
 
