@@ -1,0 +1,23 @@
+{
+  "_doc": "Illustrative recorded run (3 trials/query) for self-testing the scorer. Replace with real model-generated trigger decisions before trusting the numbers.",
+  "st1": [true, true, true],
+  "st2": [true, true, true],
+  "st3": [true, true, false],
+  "st4": [true, false, true],
+  "st5": [true, true, true],
+  "st6": [true, true, false],
+  "st7": [true, true, true],
+  "st8": [true, true, false],
+  "st9": [true, true, true],
+  "st10": [true, false, true],
+  "sn1": [false, false, false],
+  "sn2": [false, false, false],
+  "sn3": [false, true, false],
+  "sn4": [false, false, false],
+  "sn5": [false, true, false],
+  "sn6": [false, false, false],
+  "sn7": [true, false, false],
+  "sn8": [false, false, false],
+  "sn9": [false, false, false],
+  "sn10": [false, true, false]
+}

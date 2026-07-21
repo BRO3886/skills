@@ -27,6 +27,21 @@ My Go backend coding conventions and architecture patterns — project structure
 ### `siddhartha-flutter`
 My Flutter app conventions and architecture — feature-first MVVM (View → ViewModel → Repository → data-sources), the preferred stack (Riverpod 3, freezed, dio + retrofit, go_router, drift), the three-model (DTO/domain/view-state) wall, a sealed `Failure` error pipeline, opt-in offline-first sync, and a copy-per-feature vertical slice. Useful as a style guide for Flutter work or for keeping collaborators consistent.
 
+### `review-coordinator`
+Coordinate a multi-lens code review of a PR, branch, or uncommitted changes. It gathers the diff once, routes it to whatever specialist review skills you have installed (quality, conventions, architecture, language idioms), always runs an adversarial correctness pass plus the test suite, and synthesizes one merge-safe or do-not-merge verdict backed by evidence. It degrades gracefully: with no optional lenses installed you still get correctness plus tests. Ships a `route.py` router, a verdict JSON schema, and evals.
+
+- Requires: Python 3 (for the bundled `route.py` router).
+
+### `groom-beads`
+Interactive grooming session that turns raw beads (`bd`) issues or epics into self-contained, ship-ready work contracts, then emits a ready-to-paste `/goal` condition for a later, context-free session to execute. Run it interactively on a strong model. The counterpart to `ship-beads`.
+
+- Requires: the beads issue tracker (`bd`) available in the repo.
+
+### `ship-beads`
+Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch, plan, test-first implementation via delegated builders, adversarial review, a verified PR, a confession pass, and closing the bead. Repo-agnostic: the verify commands and product rules come from the target repo's own `CLAUDE.md`. The counterpart to `groom-beads`.
+
+- Requires: the beads issue tracker (`bd`) available in the repo.
+
 ## Installing a skill
 
 Copy the skill folder into your agent's skills directory. For Claude Code:

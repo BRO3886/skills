@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "review-coordinator verdict",
+  "type": "object",
+  "required": ["verdict", "target", "tests_run", "lenses_run", "required_lenses_not_run", "findings"],
+  "additionalProperties": true,
+  "properties": {
+    "verdict": { "enum": ["merge-safe", "do-not-merge"] },
+    "target": { "type": "string", "minLength": 1 },
+    "tests_run": { "type": "boolean" },
+    "tests_green": { "type": ["boolean", "null"] },
+    "backgrounded": { "type": "boolean" },
+    "lenses_run": { "type": "array", "items": { "type": "string" } },
+    "required_lenses_not_run": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lens", "reason", "dependency"],
+        "properties": {
+          "lens": { "type": "string" },
+          "reason": { "type": "string" },
+          "dependency": { "type": "string" }
+        }
+      }
+    },
+    "lenses_skipped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lens", "reason"],
+        "properties": {
+          "lens": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "lens", "issue"],
+        "properties": {
+          "severity": { "enum": ["blocking", "non-blocking", "nit"] },
+          "lens": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "line": { "type": ["integer", "null"] },
+          "issue": { "type": "string", "minLength": 1 },
+          "fix": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "open_questions": { "type": "array", "items": { "type": "string" } }
+  }
+}
