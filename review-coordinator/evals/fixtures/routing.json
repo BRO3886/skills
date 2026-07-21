@@ -1,0 +1,44 @@
+[
+  {
+    "name": "go-backend-change",
+    "files": ["internal/api/handler.go", "go.mod"],
+    "bugfix": false,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions", "go"]
+  },
+  {
+    "name": "flutter-change",
+    "files": ["lib/main.dart", "pubspec.yaml"],
+    "bugfix": false,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions", "flutter"]
+  },
+  {
+    "name": "docs-only",
+    "files": ["README.md", "docs/architecture.md"],
+    "bugfix": false,
+    "expect_lenses": ["docs"]
+  },
+  {
+    "name": "crypto-critical-mixed",
+    "files": ["backend/Backup/Encryptor.cs", "internal/auth/keys.go"],
+    "bugfix": false,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions", "architecture", "go"]
+  },
+  {
+    "name": "frontend-change",
+    "files": ["src/components/Button.tsx", "styles/app.css"],
+    "bugfix": false,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions", "frontend"]
+  },
+  {
+    "name": "go-bugfix",
+    "files": ["internal/queue/drain.go"],
+    "bugfix": true,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions", "diagnose", "go"]
+  },
+  {
+    "name": "generic-code-no-specialist",
+    "files": ["scripts/migrate.py"],
+    "bugfix": false,
+    "expect_lenses": ["correctness", "tests", "security", "quality", "pr-conventions"]
+  }
+]

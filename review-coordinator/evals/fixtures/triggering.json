@@ -1,0 +1,26 @@
+{
+  "_doc": "Triggering eval set per Skill creation best practices §5. Each query is labelled should_trigger and assigned to train or val. should-trigger passes if trigger-rate > 0.5; should-not passes if trigger-rate < 0.5. Run each query ~3x (nondeterministic) and record booleans in a results file keyed by id, then score with score_triggering.py. Near-misses share keywords (review/PR/merge/test/architecture/diagnose) but need a DIFFERENT skill or aren't code review.",
+  "queries": [
+    { "id": "st1", "query": "review PR #515 and tell me if it's safe to merge", "should_trigger": true, "split": "train" },
+    { "id": "st2", "query": "can you do an adversarial review of this branch before i merge it", "should_trigger": true, "split": "train" },
+    { "id": "st3", "query": "use a high-intelligence subagent to review the cache-layer changes independently", "should_trigger": true, "split": "train" },
+    { "id": "st4", "query": "thoroughly check my uncommitted changes for bugs before i push", "should_trigger": true, "split": "train" },
+    { "id": "st5", "query": "run a deep code review on the billing service's invoice endpoint and give me one verdict", "should_trigger": true, "split": "train" },
+    { "id": "st6", "query": "i opened a pr on my cli tool, want a second set of eyes on whether it'll break anything", "should_trigger": true, "split": "train" },
+    { "id": "st7", "query": "check the nightly-export PR for correctness, quality and conventions", "should_trigger": true, "split": "val" },
+    { "id": "st8", "query": "before merging the batch sync change, vet it end to end", "should_trigger": true, "split": "val" },
+    { "id": "st9", "query": "a draft PR was raised, review it and report the blocking issues", "should_trigger": true, "split": "val" },
+    { "id": "st10", "query": "is this diff ok to merge? go through it properly", "should_trigger": true, "split": "val" },
+
+    { "id": "sn1", "query": "review my flashcards for tomorrow's quiz", "should_trigger": false, "split": "train" },
+    { "id": "sn2", "query": "write a unit test for the drain function in queue.go", "should_trigger": false, "split": "train" },
+    { "id": "sn3", "query": "open a PR for the changes i just made", "should_trigger": false, "split": "train" },
+    { "id": "sn4", "query": "explain how the auth flow works in this codebase", "should_trigger": false, "split": "train" },
+    { "id": "sn5", "query": "improve the architecture of the reporting backend", "should_trigger": false, "split": "train" },
+    { "id": "sn6", "query": "just run the test suite and show me the output", "should_trigger": false, "split": "train" },
+    { "id": "sn7", "query": "make this PR easier to review by cleaning up the commit history", "should_trigger": false, "split": "val" },
+    { "id": "sn8", "query": "what's causing the merge conflict in handler.go", "should_trigger": false, "split": "val" },
+    { "id": "sn9", "query": "review my resume bullet points for a job application", "should_trigger": false, "split": "val" },
+    { "id": "sn10", "query": "diagnose why the temporal workflow keeps timing out", "should_trigger": false, "split": "val" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "verdict": "do-not-merge",
+  "target": "PR #515 feat/export-manifest-sidecar",
+  "tests_run": true,
+  "tests_green": false,
+  "backgrounded": true,
+  "lenses_run": ["correctness", "tests", "pr-conventions"],
+  "required_lenses_not_run": [
+    { "lens": "security", "reason": "no installed skill found", "dependency": "security-lens or security-review" }
+  ],
+  "lenses_skipped": [
+    { "lens": "quality", "reason": "no quality-review skill installed" }
+  ],
+  "findings": [
+    {
+      "severity": "non-blocking",
+      "lens": "correctness",
+      "file": "backend/.../ExportActivities.cs",
+      "line": 0,
+      "issue": "manifest createdAt uses ExtendedIso (variable fractional seconds); not verified against the external consumer's parser",
+      "fix": "pin createdAt to second precision and add a verbatim-regex test mirroring the key test"
+    }
+  ],
+  "open_questions": ["does the downstream createdAt parser tolerate fractional seconds?"]
+}

@@ -1,0 +1,12 @@
+{
+  "target": "PR #999 some-branch",
+  "tests_run": true,
+  "lenses_run": ["correctness"],
+  "findings": [
+    {
+      "severity": "critical",
+      "lens": "correctness",
+      "issue": "uses a severity value that is not in the allowed enum, and the top-level verdict key is missing entirely"
+    }
+  ]
+}
