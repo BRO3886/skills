@@ -42,6 +42,26 @@ Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch
 
 - Requires: the beads issue tracker (`bd`) available in the repo.
 
+### `rem-cli`
+Bundled skill for the [`rem`](https://github.com/BRO3886/rem) CLI: create, query, update, complete, tag, and search macOS Reminders, with full command and natural-language date references.
+
+- Requires: macOS and `rem`.
+
+### `ical-cli`
+Bundled skill for the [`ical`](https://github.com/BRO3886/ical) CLI: manage macOS calendars and events, including recurrence, alerts, invitations, RSVP, availability, conference links, and import/export.
+
+- Requires: macOS and `ical`.
+
+### `healthsync`
+Bundled skill for [`healthsync`](https://github.com/BRO3886/healthsync): query a parsed Apple Health export through the CLI or its local SQLite database, with detailed schema guidance and read-only safety rules.
+
+- Requires: `healthsync` and a populated local database.
+
+### `gtasks-cli`
+Bundled skill for the [`gtasks`](https://github.com/BRO3886/gtasks) CLI: authenticate with Google Tasks and manage task lists and tasks, with quick and advanced command references.
+
+- Requires: `gtasks` configured with Google OAuth credentials.
+
 ## Installing a skill
 
 Copy the skill folder into your agent's skills directory. For Claude Code:
