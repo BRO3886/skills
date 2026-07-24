@@ -112,7 +112,10 @@ Run the `review-coordinator` skill against the diff — in delegated mode,
 fire a separate review subagent (Opus allowed) that invokes the skill on
 the OPEN PR; in inline mode, invoke it on the branch diff before the PR. A
 separate skeptic beats self-checking: the implementer shares its own blind
-spots. Feed the review concrete adversarial angles from the diff (the lossy
+spots. If the `review-coordinator` skill is not installed, do not fall back
+to an ad-hoc self-review. Stop and ask the user for permission to install it
+from https://github.com/BRO3886/skills, then run it once it is available.
+Feed the review concrete adversarial angles from the diff (the lossy
 boundaries, the "can this false-pass now" inversions of each fix). Fix
 every confirmed finding, re-run the full gate, and only then move toward
 merge; file non-blocking findings as beads so they don't evaporate. Review
