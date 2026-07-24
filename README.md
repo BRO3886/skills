@@ -42,6 +42,12 @@ Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch
 
 - Requires: the beads issue tracker (`bd`) available in the repo.
 
+### `grill-me`
+Stress-test a plan or design through a one-question-at-a-time interview that follows each branch until its decisions are resolved or blocked. Originally created by [Matt Pocock](https://github.com/mattpocock/skills). This variant adds complete decision records with concrete values, failure semantics, operational and privacy constraints, trade-offs, and consequences. It also persists the full grill under `~/.codex/grills/`, outside the project working tree, so the record survives context compaction and can be promoted into a project artifact later.
+
+### `grill-with-docs`
+Challenge a plan against the existing domain model, sharpen terminology, and update `CONTEXT.md` and ADRs as decisions crystallise. Originally created by [Matt Pocock](https://github.com/mattpocock/skills). This variant expands the ADR workflow to retain the full chosen contract: concrete interfaces and values, boundary and failure semantics, operational and privacy constraints, rejected alternatives, trade-offs, and downstream consequences.
+
 ## Installing a skill
 
 Copy the skill folder into your agent's skills directory. For Claude Code:
