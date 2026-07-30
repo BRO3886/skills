@@ -4,6 +4,11 @@ A small collection of [Agent Skills](https://agentskills.io) I use and share. Ea
 
 ## Skills
 
+### `file-indian-itr`
+Prepare and file an Indian income-tax return from one local intake directory. It inventories Form 16, AIS/TIS/26AS, bank, broker, deduction, loss, and disclosure evidence; asks an exhaustive applicability interview for missing categories; reconciles the calculation against current official rules; and drives the official e-Filing portal with harness-neutral accessibility/screenshot computer use. It keeps credentials, OTPs, declarations, and irreversible submission under taxpayer control and requires all validation layers plus a readable acknowledgement before reporting the return filed.
+
+- Requires: Python 3 for the optional local intake-inventory script, browser or desktop computer-use tooling, and taxpayer access to the official Income Tax e-Filing portal.
+
 ### `youtube-transcript-research`
 Research a topic by reading the transcripts of many YouTube videos instead of watching them. A coordinator searches and curates a video set on metadata, then fans out one subagent per angle to pull transcripts, read them, and return cited findings. This variant uses **gog** (YouTube Data API, OAuth) for the search ranking; metrics and captions come from `yt-dlp` (no extra API quota).
 
