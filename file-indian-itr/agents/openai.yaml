@@ -1,0 +1,4 @@
+interface:
+  display_name: "File Indian ITR"
+  short_description: "Prepare and file an Indian income-tax return"
+  default_prompt: "Use $file-indian-itr to audit my tax documents, prepare my return, and guide filing on the official portal."
