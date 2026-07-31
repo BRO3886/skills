@@ -1,0 +1,7 @@
+{
+  "name": "04-sqlraw-interpolation",
+  "description": "LINQ search replaced with FromSqlRaw interpolating request.Search — SQL injection from a request parameter.",
+  "should_find": [
+    { "check": 7, "file": "SearchCasesQueryHandler.cs" }
+  ]
+}

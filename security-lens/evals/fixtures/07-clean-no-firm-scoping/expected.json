@@ -1,0 +1,5 @@
+{
+  "name": "07-clean-no-firm-scoping",
+  "description": "False-positive trap: a read-only query with no firm/tenant scoping and no per-user filtering. Both are BY DESIGN in this single-tenant product — the lens must return no findings.",
+  "expect_clean": true
+}

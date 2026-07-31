@@ -1,0 +1,7 @@
+{
+  "name": "01-missing-authorize",
+  "description": "New App controller with no class-level [Authorize(Policy = ...)] — every endpoint is anonymous.",
+  "should_find": [
+    { "check": 1, "file": "CaseTagsController.cs" }
+  ]
+}

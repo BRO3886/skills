@@ -1,0 +1,9 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Infrastructure/Hosting/Extensions/StartupApiExtensions.cs b/backend/service-api/src/MatterDesk.Api/Infrastructure/Hosting/Extensions/StartupApiExtensions.cs
+--- a/backend/service-api/src/MatterDesk.Api/Infrastructure/Hosting/Extensions/StartupApiExtensions.cs
++++ b/backend/service-api/src/MatterDesk.Api/Infrastructure/Hosting/Extensions/StartupApiExtensions.cs
+@@ -82,6 +82,9 @@ public static class StartupApiExtensions
+         await db.Database.ExecuteSqlRawAsync(
+             "CREATE INDEX IF NOT EXISTS ix_case_files_classification ON case_files (classification)");
++
++        await db.Database.ExecuteSqlRawAsync(
++            "CREATE INDEX IF NOT EXISTS ix_case_files_category ON case_files (category)");

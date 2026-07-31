@@ -1,0 +1,33 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Controllers/App/CaseTagsController.cs b/backend/service-api/src/MatterDesk.Api/Controllers/App/CaseTagsController.cs
+new file mode 100644
+--- /dev/null
++++ b/backend/service-api/src/MatterDesk.Api/Controllers/App/CaseTagsController.cs
+@@ -0,0 +1,28 @@
++using MediatR;
++using Microsoft.AspNetCore.Mvc;
++using MatterDesk.Api.Commands.CaseTags;
++
++namespace MatterDesk.Api.Controllers.App;
++
++[ApiController]
++[Route("api/app/cases/{caseId:guid}/tags")]
++public class CaseTagsController : ControllerBase
++{
++    private readonly IMediator _mediator;
++
++    public CaseTagsController(IMediator mediator)
++    {
++        _mediator = mediator;
++    }
++
++    [HttpGet]
++    public async Task<IActionResult> List(Guid caseId, CancellationToken ct)
++        => Ok(await _mediator.Send(new ListCaseTagsQuery(caseId), ct));
++
++    [HttpPost]
++    public async Task<IActionResult> Add(Guid caseId, [FromBody] AddCaseTagRequest request, CancellationToken ct)
++    {
++        var result = await _mediator.Send(new AddCaseTagCommand(caseId, request.Label), ct);
++        return result.Match<IActionResult>(Ok, _ => BadRequest());
++    }
++}

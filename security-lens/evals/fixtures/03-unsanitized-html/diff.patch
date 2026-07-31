@@ -1,0 +1,24 @@
+diff --git a/frontend/app/src/pages/Case/tabs/Providers/components/VisitNoteSummary.tsx b/frontend/app/src/pages/Case/tabs/Providers/components/VisitNoteSummary.tsx
+new file mode 100644
+--- /dev/null
++++ b/frontend/app/src/pages/Case/tabs/Providers/components/VisitNoteSummary.tsx
+@@ -0,0 +1,19 @@
++import { Box, Text } from '@chakra-ui/react';
++
++interface VisitNoteSummaryProps {
++  providerName: string;
++  aiSummaryHtml: string;
++}
++
++export const VisitNoteSummary = ({ providerName, aiSummaryHtml }: VisitNoteSummaryProps) => {
++  return (
++    <Box p={4}>
++      <Text textStyle="semiBold14" mb={2}>
++        {providerName}
++      </Text>
++      <Box
++        dangerouslySetInnerHTML={{ __html: aiSummaryHtml }}
++      />
++    </Box>
++  );
++};

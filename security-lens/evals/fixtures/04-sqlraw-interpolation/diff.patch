@@ -1,0 +1,18 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Queries/Cases/SearchCasesQueryHandler.cs b/backend/service-api/src/MatterDesk.Api/Queries/Cases/SearchCasesQueryHandler.cs
+--- a/backend/service-api/src/MatterDesk.Api/Queries/Cases/SearchCasesQueryHandler.cs
++++ b/backend/service-api/src/MatterDesk.Api/Queries/Cases/SearchCasesQueryHandler.cs
+@@ -18,11 +18,10 @@ public class SearchCasesQueryHandler : IRequestHandler<SearchCasesQuery, Result<
+
+     public async Task<Result<List<CaseSearchDto>>> Handle(SearchCasesQuery request, CancellationToken ct)
+     {
+-        var cases = await _db.Cases
+-            .Where(c => EF.Functions.ILike(c.Title, $"%{request.Search}%"))
+-            .Take(50)
+-            .ToListAsync(ct);
++        var cases = await _db.Cases
++            .FromSqlRaw($"SELECT * FROM cases WHERE title ILIKE '%{request.Search}%' LIMIT 50")
++            .ToListAsync(ct);
+
+         return Result.Success(cases.Select(CaseSearchDto.From).ToList());
+     }
+ }

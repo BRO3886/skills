@@ -1,0 +1,7 @@
+{
+  "name": "02-pin-equals-compare",
+  "description": "PIN verification on the anonymous discovery portal switched from CryptographicOperations.FixedTimeEquals to a plain string comparison (timing side-channel).",
+  "should_find": [
+    { "check": 2, "file": "DiscoveryLinkService.cs" }
+  ]
+}

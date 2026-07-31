@@ -1,0 +1,13 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Database/Entities/Client/Client.cs b/backend/service-api/src/MatterDesk.Api/Database/Entities/Client/Client.cs
+--- a/backend/service-api/src/MatterDesk.Api/Database/Entities/Client/Client.cs
++++ b/backend/service-api/src/MatterDesk.Api/Database/Entities/Client/Client.cs
+@@ -30,6 +30,10 @@ public class Client
+     [AuditRedact]
+     [AuditFieldName("SSN")]
+     public required string SocialSecurityNumber { get; set; }
++
++    [AuditFieldName("Driver License Number")]
++    public string? DriverLicenseNumber { get; set; }
++
+     [AuditRedact]
+     public string? DateOfBirth { get; set; }
