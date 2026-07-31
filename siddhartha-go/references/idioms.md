@@ -296,3 +296,42 @@ func setDifference(all, remove []string) []string {
 ```
 
 Why: the callee stays testable with arbitrary lists; the caller is explicit about what it removes and why. Gotcha: if the same removal recurs across many callers, promote it to a method on the request object instead of repeating it.
+
+---
+
+## 11. Sticky-error wrapper (errWriter) for repeated identical checks
+
+When a function makes a run of sequential calls against the same fallible dependency and every failure gets identical handling (stop, return the first error), the `if err != nil` lines outnumber the logic. Wrap the dependency in a type that stores the first error and no-ops afterwards, then read the stored error once at the end.
+
+```go
+type errWriter struct {
+    io.Writer
+    err error
+}
+
+func (e *errWriter) Write(buf []byte) (int, error) {
+    if e.err != nil {
+        return 0, e.err
+    }
+    var n int
+    n, e.err = e.Writer.Write(buf)
+    return n, nil
+}
+
+func WriteResponse(w io.Writer, st Status, headers []Header, body io.Reader) error {
+    ew := &errWriter{Writer: w}
+    fmt.Fprintf(ew, "HTTP/1.1 %d %s\r\n", st.Code, st.Reason)
+    for _, h := range headers {
+        fmt.Fprintf(ew, "%s: %s\r\n", h.Key, h.Value)
+    }
+    fmt.Fprint(ew, "\r\n")
+    io.Copy(ew, body)
+    return ew.err
+}
+```
+
+Mechanism: guard-then-assign. The only assignment to `e.err` sits below a guard that short-circuits when `e.err` is already set, so the first error wins and every later call returns without touching the underlying writer. Embedding `io.Writer` means the wrapper satisfies the interface for free and only overrides `Write`, so `fmt.Fprintf` and `io.Copy` accept it unchanged. `bufio.Scanner` is the same shape in the stdlib: `sc.Scan()` returns false and you read `sc.Err()` once at the end.
+
+Discriminator: use the sticky wrapper only when handling is identical for every step. The moment a step needs its own classification (a different sentinel, a `WithHint` message, a metric tag naming which write failed), keep the individual checks and reach for the error builder in `internal/errors/` instead. The wrapper deliberately destroys the information about *which* call failed; that is the trade it makes for the line-count win. Bar for reaching for it: roughly 5+ repeated identical checks.
+
+Gotchas: forgetting the final `return ew.err` swallows every error silently, and the compiler will not complain because each wrapped call now looks successful. Returning `(n, nil)` on the success path is intentional (callers like `fmt.Fprintf` keep going), which also means a partial write is invisible until the final read. Never share one wrapper across goroutines: the `err` field is unsynchronized.

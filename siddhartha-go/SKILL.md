@@ -77,6 +77,7 @@ Code in `references/conventions.md`.
 - **Named input structs** for any operation with 3+ parameters, with `binding` tags for validation.
 - **Partial updates use pointer fields** — nil means "don't change this field"; check `Changed()` (CLI) or nil (API) before applying.
 - **Functional options** (`WithGroup(id)`, `WithSettled(b)`) for complex/optional query filters.
+- **Accept the narrowest interface.** A parameter is the smallest interface whose methods the function actually calls: `io.Writer`, not `*os.File` or `io.ReadWriteCloser`. Payoff: any writable thing works (test buffers included), and the signature documents exactly what the function does to its argument.
 
 ## HTTP Layer
 
@@ -141,6 +142,7 @@ Default to `errgroup` only when all-or-nothing is the real contract. Most reques
 - **Buffer to cap 1** any "goroutine + `select` on `ctx.Done()`" timeout channel, so a late goroutine has somewhere to write instead of leaking.
 - **Pass loop variables as explicit args** to goroutines (`go func(i int){...}(i)`).
 - **Defers run LIFO** — put `defer recoverPanic(ctx)` before `defer close(ch)` so recover fires first and the channel still closes on panic.
+- **Leave concurrency to the caller.** A function does not start a goroutine on the caller's behalf: expose a synchronous API and let the caller decide to run it async. If a function must start one, it hands the caller an explicit way to stop or await it (a stop channel, a ctx, a returned handle), otherwise the goroutine leaks with no owner.
 
 ### Gotchas
 
@@ -173,6 +175,7 @@ Decomposition and data-shaping patterns. Code-shape sketches in `references/idio
 - **Unify branching, don't duplicate it.** Collapse a forest of boolean-flag branches into one dispatch with a **control-params struct** (named fields beat positional bools); for a stable loop over varied item types, resolve a typed **builder per type via a strategy** so adding a type never touches the loop.
 - **Always-write result assembly.** When a function builds a response in steps and must record timing/fields on every return path, assign them in a `defer` that captures the result by reference and takes `time.Now()` as a value argument.
 - **Nil-receiver-safe accessors.** On a request/context struct threaded as a pointer through deep chains, make getters nil-safe (`if r == nil { return zero }`) so callers never guard; use a distinct sentinel (`-1`, not `0`) where the zero value is itself valid.
+- **Collapse identical error checks with a sticky-error wrapper.** When a function makes N sequential same-typed fallible calls and every failure gets identical handling (stop, return the first error), wrap the dependency in a type that stores the first error and turns later calls into no-ops, then check the stored error once at the end. Only for identical handling, never when failures need different sentinels or hints; the bar is roughly 5+ repeated checks; the final field read is mandatory or errors are silently swallowed. `bufio.Scanner` is this pattern in the stdlib (`sc.Err()` at the end).
 - **Partition / dedup / prune with membership sets.** Rearrange by a computed threshold via a `map[id]bool` (`kept[:cut] + low + kept[cut:]`, O(n), order-preserving); dedup typed records on a separator-joined composite key; prune an allowlist at the call site so the callee stays general.
 
 ## Testing
