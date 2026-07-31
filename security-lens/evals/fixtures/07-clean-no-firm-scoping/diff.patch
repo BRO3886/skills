@@ -1,0 +1,29 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Queries/Cases/ListOpenCasesQueryHandler.cs b/backend/service-api/src/MatterDesk.Api/Queries/Cases/ListOpenCasesQueryHandler.cs
+new file mode 100644
+--- /dev/null
++++ b/backend/service-api/src/MatterDesk.Api/Queries/Cases/ListOpenCasesQueryHandler.cs
+@@ -0,0 +1,24 @@
++using MediatR;
++using Microsoft.EntityFrameworkCore;
++
++namespace MatterDesk.Api.Queries.Cases;
++
++public class ListOpenCasesQueryHandler : IRequestHandler<ListOpenCasesQuery, Result<List<CaseSummaryDto>>>
++{
++    private readonly BaseDbContext _db;
++
++    public ListOpenCasesQueryHandler(BaseDbContext db)
++    {
++        _db = db;
++    }
++
++    public async Task<Result<List<CaseSummaryDto>>> Handle(ListOpenCasesQuery request, CancellationToken ct)
++    {
++        var cases = await _db.Cases
++            .Where(c => c.Status == CaseStatus.Open)
++            .OrderByDescending(c => c.CreatedAt)
++            .ToListAsync(ct);
++
++        return Result.Success(cases.Select(CaseSummaryDto.From).ToList());
++    }
++}

@@ -1,0 +1,17 @@
+diff --git a/backend/service-api/src/MatterDesk.Api/Services/Discovery/DiscoveryLinkService.cs b/backend/service-api/src/MatterDesk.Api/Services/Discovery/DiscoveryLinkService.cs
+--- a/backend/service-api/src/MatterDesk.Api/Services/Discovery/DiscoveryLinkService.cs
++++ b/backend/service-api/src/MatterDesk.Api/Services/Discovery/DiscoveryLinkService.cs
+@@ -100,12 +100,8 @@ public class DiscoveryLinkService : IDiscoveryLinkService
+         var storedPinBytes = Encoding.UTF8.GetBytes(link.Pin);
+         var providedPinBytes = Encoding.UTF8.GetBytes(providedPin);
+
+-        if (storedPinBytes.Length != providedPinBytes.Length ||
+-            !CryptographicOperations.FixedTimeEquals(storedPinBytes, providedPinBytes))
+-        {
+-            return Result.Unauthorized();
+-        }
++        if (link.Pin != providedPin)
++            return Result.Unauthorized();
+
+         return Result.Success();
+     }

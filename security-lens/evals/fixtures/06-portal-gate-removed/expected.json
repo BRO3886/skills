@@ -1,0 +1,7 @@
+{
+  "name": "06-portal-gate-removed",
+  "description": "Reversed-safeguard fixture: the IsAllowedPortalUrl host-allowlist gate is removed from the filing attachment download path — the service would fetch arbitrary URLs found in inbound email (SSRF).",
+  "should_find": [
+    { "check": 6, "file": "CourtFilingActivities.cs" }
+  ]
+}

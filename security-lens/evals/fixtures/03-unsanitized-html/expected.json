@@ -1,0 +1,7 @@
+{
+  "name": "03-unsanitized-html",
+  "description": "New component renders AI-extracted summary HTML via dangerouslySetInnerHTML without the sanitizeHtml() helper — stored XSS from document-derived content.",
+  "should_find": [
+    { "check": 8, "file": "VisitNoteSummary.tsx" }
+  ]
+}

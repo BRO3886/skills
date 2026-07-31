@@ -1,0 +1,7 @@
+{
+  "name": "05-missing-audit-redact",
+  "description": "New PII field (driver license number) added to Client without [AuditRedact] — the value would appear in plaintext in audit diffs.",
+  "should_find": [
+    { "check": 4, "file": "Client.cs" }
+  ]
+}

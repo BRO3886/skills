@@ -1,0 +1,5 @@
+{
+  "name": "08-clean-startup-ddl",
+  "description": "False-positive trap: a new ExecuteSqlRawAsync call, but it is hardcoded startup DDL (no request data). The lens's ground rules say this is fine — must return no findings.",
+  "expect_clean": true
+}
