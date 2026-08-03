@@ -91,12 +91,26 @@ Skills I no longer use but keep in the repo. They are not installed and not main
 - `journal` — write a journal entry for today's work session on the current project.
 - `prep-for-task` — bootstrap context for a new session on the current project.
 
+## Structure
+
+Skills are grouped by category into folders. `archived/` holds retired skills kept for reference.
+
+```
+archived/          journal, prep-for-task, grill-me, grill-with-docs
+tax-filing/        file-indian-itr
+video-research/    youtube-transcript-research, -dlp, youtube-vault-note
+code-conventions/  siddhartha-go, siddhartha-flutter
+code-review/       review-coordinator, security-lens
+workflow/          groom-beads, ship-beads
+cli-tooling/       rem-cli, ical-cli, healthsync, gtasks-cli
+```
+
 ## Installing a skill
 
 Copy the skill folder into your agent's skills directory. For Claude Code:
 
 ```bash
-cp -R youtube-transcript-research-dlp ~/.claude/skills/
+cp -R video-research/youtube-transcript-research-dlp ~/.claude/skills/
 ```
 
 Then invoke it by name (or let the agent trigger it from its description). For other agents, point them at the folder per their skill-loading convention.
