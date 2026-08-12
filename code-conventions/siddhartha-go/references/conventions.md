@@ -270,6 +270,8 @@ func WithSettled(s bool) ListOption     { return func(o *listOptions) { o.settle
 
 Always `gin.New()`, never `gin.Default()` — control the middleware stack explicitly. Order: `RequestID → Logging → CORS → Auth → ErrorHandler`.
 
+Expose the service health check at `GET /health`. Do not use `/healthz`.
+
 **Typed context keys** — set in auth middleware, read via typed getters (never raw `ctx.Value`):
 
 ```go
