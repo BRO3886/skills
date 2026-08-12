@@ -2,6 +2,21 @@
 
 Detailed rules and code examples for project structure, architecture, errors, API, HTTP, database, testing, configuration, comments, and stack choices. Read only the sections needed for the current task. The examples use a simple expense/group domain for illustration.
 
+## Contents
+
+- [Project structure and naming](#project-structure-and-naming)
+- [Entry point](#entry-point)
+- [Service and repository pattern](#service--repository-pattern)
+- [Dependency injection](#dependency-injection-uber-fx)
+- [Error handling](#error-handling)
+- [API design](#api-design)
+- [HTTP layer](#http-layer-gin)
+- [Database](#database-ent)
+- [Testing](#testing)
+- [Configuration](#config)
+- [Comments](#comments)
+- [Preferred stack](#preferred-stack)
+
 ---
 
 ## Project structure and naming

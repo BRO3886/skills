@@ -22,8 +22,11 @@ Use these leading terms consistently in plans and reviews: **boundary-first**, *
 | Task | Read |
 | --- | --- |
 | Project layout, naming, service/repository boundaries, dependency injection, errors, APIs, HTTP, database, testing, static config, comments, or stack choices | `references/conventions.md` |
-| Goroutines, fan-out, worker pools, async loaders, contexts, timeouts, startup/shutdown, caching, rate limiting, retry, or graceful degradation | `references/concurrency.md` |
-| gRPC servers or clients, interceptor ordering, metadata, observability, tracing, metrics, runtime config, feature flags, or kill switches | `references/services.md` |
+| Goroutines, fan-out, worker pools, async loaders, contexts, timeouts, or startup/shutdown | `references/concurrency.md` |
+| Caching, request coalescing, rate limiting, retry, or graceful degradation | `references/caching-resilience.md` |
+| gRPC servers or clients, interceptor ordering, metadata, or transport policy | `references/grpc.md` |
+| Structured logging, metrics, latency measurement, or tracing | `references/observability.md` |
+| Runtime config, feature flags, kill switches, safe defaults, or gradual rollout | `references/runtime-config.md` |
 | Complex function decomposition, eligibility versus transformation, branch unification, result assembly, or sticky errors | `references/idioms.md` |
 | Matching, ranking, deduplication, interleaving, scoring, quotas, or list placement | `references/algorithms.md` |
 
