@@ -1,6 +1,20 @@
 # Code-Shape Idioms
 
-Characteristic decomposition and data-shaping patterns — how a complex function gets structured into testable, pure pieces. Reach for these when building a processor/transformer/handler that has both an eligibility decision and a transformation, or when shaping/partitioning slices. Summarized in `SKILL.md`'s Idioms section.
+Characteristic decomposition and data-shaping patterns for turning complex functions into testable, pure pieces. Read this when a handler owns both eligibility and transformation, or when shaping and partitioning slices.
+
+## Contents
+
+- [1. Validator and modifier split](#1-validator--modifier-split-decide-vs-do)
+- [2. Threshold, membership, partition](#2-compute-threshold--membership-set--stable-partition)
+- [3. Chunk and merge](#3-chunk-and-merge-with-a-single-call-fast-path)
+- [4. Deferred result assembly](#4-deferred-result-assembly-with-a-captured-pointer)
+- [5. Constructor parameter](#5-promote-a-magic-constant-to-a-constructor-parameter)
+- [6. Strategy and typed builder](#6-strategy--typed-builder-hierarchy-for-a-stable-loop-over-varied-item-types)
+- [7. Control parameters](#7-control-params-struct-to-unify-boolean-flag-branches)
+- [8. Explicit function state](#8-extract-closed-over-state-into-explicit-params-method--pure-function)
+- [9. Nil-receiver accessors](#9-nil-receiver-safe-accessors-with-a-sentinel)
+- [10. Call-site allowlist pruning](#10-prune-the-allowlist-at-the-call-site)
+- [11. Sticky-error wrapper](#11-sticky-error-wrapper-errwriter-for-repeated-identical-checks)
 
 ---
 

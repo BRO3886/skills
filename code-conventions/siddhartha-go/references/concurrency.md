@@ -1,8 +1,28 @@
-# Concurrency, Caching & Resilience — Code Templates
+# Concurrency Code Templates
 
-Full templates for the patterns summarized in `SKILL.md`'s Concurrency section. These are extracted from production Go backend services that fan out to many dependencies on the hot path under real traffic. Read this when implementing a worker pool, a parallel fan-out, per-call timeouts, a cache layer, rate limiting, or graceful degradation.
+Use these templates after choosing the result contract and lifecycle owner. Every goroutine must report completion or failure to its owner. If a boundary recovers a panic, convert it to an error, record the incident, and unblock every waiter.
 
-Throughout: `recoverPanic(ctx)` is your panic-recovery helper — it recovers, logs with context, and swallows. Every goroutine gets one as its first deferred call.
+## Contents
+
+- [1. Bounded fan-out via a semaphore channel](#1-bounded-fan-out-via-a-semaphore-channel)
+- [2. Fixed worker pool](#2-fixed-worker-pool-long-lived-workers-jobs--results-channels)
+- [3. Parallel fan-out with partial results](#3-parallel-fan-out-tolerating-partial-failure-waitgroup--buffered-result-channel)
+- [4. All-or-nothing fan-out with errgroup](#4-errgroup-for-all-or-nothing-fan-out)
+- [5. Typed async loader](#5-typed-async-loader-fire-early-await-later)
+- [6. Generic one-shot future](#6-generic-one-shot-future)
+- [7. Per-call timeout](#7-per-call-timeout-with-select-on-ctxdone)
+- [8. Typed private context keys](#8-typed-private-context-keys-for-request-scoped-values)
+- [9. Lazy singleton with sync.Once](#9-lazy-singleton-with-synconce)
+- [10. Startup waves and shutdown ordering](#10-graceful-startup-waves-and-shutdown-ordering)
+
+Use one non-recovering helper to record the stack and construct the error that each owning boundary delivers:
+
+```go
+func panicError(ctx context.Context, operation string, recovered any) error {
+    log.ErrorfWithContext(ctx, "%s panic: %v\n%s", operation, recovered, debug.Stack())
+    return fmt.Errorf("%s panic: %v", operation, recovered)
+}
+```
 
 ---
 
@@ -11,9 +31,14 @@ Throughout: `recoverPanic(ctx)` is your panic-recovery helper — it recovers, l
 Process N items concurrently while capping simultaneous goroutines at K (K ≪ N). The classic shape for batching expensive outbound calls across a large input set without a pool library.
 
 ```go
-func processAll(ctx context.Context, items []Item, maxWorkers int) map[int]Result {
+type itemResult struct {
+    result Result
+    err    error
+}
+
+func processAll(ctx context.Context, items []Item, maxWorkers int) (map[int]Result, error) {
     var wg sync.WaitGroup
-    results := make(chan Result, len(items)) // sized to senders — never parks
+    results := make(chan itemResult, len(items)) // sized to senders — never parks
     guard := make(chan struct{}, maxWorkers) // the semaphore
 
     for i := range items {
@@ -21,17 +46,15 @@ func processAll(ctx context.Context, items []Item, maxWorkers int) map[int]Resul
         wg.Add(1)
         item := items[i]
         go func() {
-            defer recoverPanic(ctx)
             defer func() {
+                if r := recover(); r != nil {
+                    results <- itemResult{err: panicError(ctx, "process", r)}
+                }
                 wg.Done()
                 <-guard // release the slot
             }()
             r, err := process(ctx, item)
-            if err != nil {
-                log.Errorf("process: %v", err)
-                return
-            }
-            results <- r
+            results <- itemResult{result: r, err: err}
         }()
     }
 
@@ -39,14 +62,19 @@ func processAll(ctx context.Context, items []Item, maxWorkers int) map[int]Resul
     close(results) // safe only after Wait — all senders are done
 
     merged := make(map[int]Result)
+    var errs []error
     for r := range results {
-        merged[r.ID] = r
+        if r.err != nil {
+            errs = append(errs, r.err)
+            continue
+        }
+        merged[r.result.ID] = r.result
     }
-    return merged
+    return merged, errors.Join(errs...)
 }
 ```
 
-Notes: release the slot inside the deferred close so a panic (recovered above it — defers run LIFO) still frees the slot. If you never release on panic, the pool starves.
+Notes: one deferred boundary owns panic conversion, completion, and semaphore release. The caller receives every successful result plus an aggregated error for failed items.
 
 ---
 
@@ -74,7 +102,7 @@ func runPool(ctx context.Context, all []Item, workers, batchSize int) ([]Item, [
             var cur job
             defer func() {
                 if r := recover(); r != nil {
-                    results <- result{unprocessed: cur.items, err: fmt.Errorf("panic: %v", r)}
+                    results <- result{unprocessed: cur.items, err: panicError(ctx, "worker", r)}
                 }
                 wg.Done()
             }()
@@ -111,7 +139,7 @@ Notes: the `cur` variable is declared outside the `range` so the deferred `recov
 
 ## 3. Parallel fan-out tolerating partial failure (WaitGroup + buffered result channel)
 
-The default shape for request enrichment: split one logical call into N concurrent pieces, fire them, merge after. A single piece failing is logged and skipped — it must not abort the rest. This is what most fan-outs actually want.
+The default shape for request enrichment: split one logical call into N concurrent pieces, fire them, then merge every success. A failed piece does not abort its siblings, but its error remains part of the result contract.
 
 ```go
 type piece struct {
@@ -120,15 +148,19 @@ type piece struct {
     err  error
 }
 
-func fetchInParallel(ctx context.Context, chunks [][]Item) *Aggregate {
+func fetchInParallel(ctx context.Context, chunks [][]Item) (*Aggregate, error) {
     var wg sync.WaitGroup
     out := make(chan piece, len(chunks)) // capacity == number of goroutines
 
     for i, chunk := range chunks {
         wg.Add(1)
         go func(idx int, chunk []Item) { // pass loop vars explicitly
-            defer recoverPanic(ctx)
-            defer wg.Done()
+            defer func() {
+                if r := recover(); r != nil {
+                    out <- piece{idx: idx, err: panicError(ctx, "chunk", r)}
+                }
+                wg.Done()
+            }()
             data, err := callDependency(ctx, chunk)
             out <- piece{idx: idx, data: data, err: err}
         }(i, chunk)
@@ -138,18 +170,19 @@ func fetchInParallel(ctx context.Context, chunks [][]Item) *Aggregate {
     close(out)
 
     agg := newAggregate()
+    var errs []error
     for p := range out {
         if p.err != nil {
-            log.Errorf("chunk %d failed: %v", p.idx, p.err) // tolerate, keep merging
+            errs = append(errs, fmt.Errorf("chunk %d: %w", p.idx, p.err))
             continue
         }
         agg.merge(p.data)
     }
-    return agg
+    return agg, errors.Join(errs...)
 }
 ```
 
-Notes: channel capacity must equal the number of senders or `wg.Wait()` deadlocks. The function returns a best-effort aggregate with no top-level error — degraded results are the contract.
+Notes: channel capacity must equal the number of senders or `wg.Wait()` deadlocks. The function returns a complete aggregate of successful pieces plus an aggregated error for failures.
 
 ---
 
@@ -185,23 +218,29 @@ A single dependency call you want to kick off early and drain after doing other 
 ```go
 type Loader struct {
     Input  Params
-    respCh chan *Result
-    errCh  chan error
+    result chan loadResult
     mu     sync.Mutex
     done   bool
     res    *Result
     resErr error
 }
 
+type loadResult struct {
+    value *Result
+    err   error
+}
+
 func (l *Loader) LoadAsync(ctx context.Context) {
-    l.respCh = make(chan *Result, 1) // buffered-1: goroutine always finishes even with no reader
-    l.errCh = make(chan error, 1)
+    l.result = make(chan loadResult, 1) // buffered-1: goroutine finishes without a reader
     go func() {
-        defer recoverPanic(ctx) // before the close defer (LIFO) so channels still close on panic
-        defer func() { close(l.respCh); close(l.errCh) }()
+        defer func() {
+            if r := recover(); r != nil {
+                l.result <- loadResult{err: panicError(ctx, "dependency", r)}
+            }
+            close(l.result)
+        }()
         res, err := call(ctx, l.Input)
-        l.respCh <- res
-        l.errCh <- err
+        l.result <- loadResult{value: res, err: err}
     }()
 }
 
@@ -212,8 +251,9 @@ func (l *Loader) Await() (*Result, error) {
         return l.res, l.resErr // idempotent second await
     }
     l.done = true
-    l.res = <-l.respCh
-    l.resErr = <-l.errCh
+    result := <-l.result
+    l.res = result.value
+    l.resErr = result.err
     return l.res, l.resErr
 }
 
@@ -231,46 +271,62 @@ if err != nil {
 Stateless variant when the result is consumed exactly once and you don't need the idempotency guard:
 
 ```go
-func CallAsync(ctx context.Context, p Params) (<-chan *Result, <-chan error) {
-    respCh := make(chan *Result, 1)
-    errCh := make(chan error, 1)
+func CallAsync(ctx context.Context, p Params) <-chan loadResult {
+    result := make(chan loadResult, 1)
     go func() {
-        defer recoverPanic(ctx)
-        defer func() { close(respCh); close(errCh) }()
+        defer func() {
+            if r := recover(); r != nil {
+                result <- loadResult{err: panicError(ctx, "dependency", r)}
+            }
+            close(result)
+        }()
         res, err := call(ctx, p)
-        respCh <- res
-        errCh <- err
+        result <- loadResult{value: res, err: err}
     }()
-    return respCh, errCh // receive-only return types prevent callers sending
+    return result // receive-only return type prevents callers sending
 }
 ```
 
-The cap-1 buffer guarantees the goroutine finishes even if the caller takes an early-return branch and never reads — it won't leak. Draining both channels anyway keeps callsites uniform.
+The cap-1 buffer guarantees the goroutine finishes even if the caller returns without reading. One result channel also keeps value and error delivery atomic.
 
 ---
 
 ## 6. Generic one-shot future
 
-The lightest possible parallelism: wrap any `func() T` and collect later. No error channel — the function handles its own errors and returns a zero value on failure. Use when one cheap-but-non-trivial step can overlap the remaining synchronous work.
+The lightest explicit future: wrap any `func() (T, error)` and collect its value and failure later. Use when one cheap but non-trivial step can overlap the remaining synchronous work.
 
 ```go
-func Async[T any](ctx context.Context, fn func() T) <-chan T {
-    ch := make(chan T, 1)
+type asyncResult[T any] struct {
+    value T
+    err   error
+}
+
+func Async[T any](ctx context.Context, fn func() (T, error)) <-chan asyncResult[T] {
+    ch := make(chan asyncResult[T], 1)
     go func() {
-        defer recoverPanic(ctx)
-        defer close(ch)
-        ch <- fn()
+        defer func() {
+            if r := recover(); r != nil {
+                ch <- asyncResult[T]{err: panicError(ctx, "async", r)}
+            }
+            close(ch)
+        }()
+        value, err := fn()
+        ch <- asyncResult[T]{value: value, err: err}
     }()
     return ch
 }
 
 // caller
-mapCh := Async(ctx, func() map[int][]uint64 { return buildMapping(ctx, ids) })
+mapCh := Async(ctx, func() (map[int][]uint64, error) { return buildMapping(ctx, ids) })
 // ... other work ...
-m := <-mapCh
+result := <-mapCh
+if result.err != nil {
+    return result.err
+}
+m := result.value
 ```
 
-If you need to propagate an error, use the channel-pair variant in §5 instead.
+Use the typed loader in section 5 when the operation needs idempotent repeated awaits.
 
 ---
 
@@ -288,7 +344,11 @@ func callWithTimeout(ctx context.Context, timeout time.Duration) Result {
 
     ch := make(chan Result, 1) // MUST be buffered: late goroutine still needs to write
     go func() {
-        defer recoverPanic(ctx)
+        defer func() {
+            if r := recover(); r != nil {
+                ch <- Result{Err: panicError(ctx, "work", r)}
+            }
+        }()
         ch <- doWork(ctx)
     }()
 
@@ -368,31 +428,51 @@ Gotchas: if `dial` errors, `instance` is nil and `Once` never retries for the pr
 Parallelize independent startup with WaitGroup in dependency waves; on shutdown, stop accepting work before tearing down what it depends on.
 
 ```go
-func startup(ctx context.Context) {
+func startup(ctx context.Context) error {
     // wave 1: infrastructure, in parallel
-    wave(ctx, initDatastore, initCache, initQueue, initObjectStore)
+    if err := wave(ctx, initDatastore, initCache, initQueue, initObjectStore); err != nil {
+        return fmt.Errorf("infrastructure startup: %w", err)
+    }
     // wave 2: clients that depend on wave 1
-    wave(ctx, initClientA, initClientB)
+    if err := wave(ctx, initClientA, initClientB); err != nil {
+        return fmt.Errorf("client startup: %w", err)
+    }
+    return nil
 }
 
-func wave(ctx context.Context, fns ...func(context.Context)) {
+func wave(ctx context.Context, fns ...func(context.Context) error) error {
     var wg sync.WaitGroup
+    errs := make(chan error, len(fns))
     wg.Add(len(fns))
     for _, fn := range fns {
         fn := fn
         go func() {
-            defer wg.Done()
-            defer recoverPanic(ctx) // per-goroutine — a panic here is otherwise silent
-            fn(ctx)
+            defer func() {
+                if r := recover(); r != nil {
+                    errs <- panicError(ctx, "startup", r)
+                }
+                wg.Done()
+            }()
+            if err := fn(ctx); err != nil {
+                errs <- err
+            }
         }()
     }
     wg.Wait()
+    close(errs)
+    var failures []error
+    for err := range errs {
+        failures = append(failures, err)
+    }
+    return errors.Join(failures...)
 }
 
 func main() {
     ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
     defer stop()
-    startup(ctx)
+    if err := startup(ctx); err != nil {
+        log.Fatalf("startup: %v", err)
+    }
 
     go server.Serve()
     <-ctx.Done() // block until SIGINT/SIGTERM
@@ -403,186 +483,6 @@ func main() {
 }
 ```
 
-Don't use errgroup for startup waves: it cancels the shared context on the first error, which would abort sibling inits. You want every init to complete and report its own failure independently.
+Do not use `errgroup.WithContext` for startup waves when every initializer must finish and report independently. Aggregate all failures, then stop before serving traffic.
 
 ---
-
-## 11. Caching
-
-### Two-tier cache (in-process L1 + distributed L2)
-
-Hot read paths where a network round-trip per read is too slow, but cross-instance consistency still matters. L1 absorbs repeated reads within one instance; L2 is the shared source of truth.
-
-```go
-func GetCached[T any](ctx context.Context, key string, l1 *localCache, l2 DistributedCache,
-    load func(context.Context) (T, error)) (T, error) {
-
-    if v, ok := getL1[T](l1, key); ok {
-        return v, nil
-    }
-    var v T
-    if found, _ := l2.Get(ctx, key, &v); found {
-        _ = setL1(l1, key, v, l1TTL) // write-back to L1
-        return v, nil
-    }
-    v, err := load(ctx)
-    if err != nil {
-        return v, err
-    }
-    _ = l2.Set(ctx, key, v, l2TTL)
-    _ = setL1(l1, key, v, l1TTL)
-    return v, nil
-}
-```
-
-Rules: L1 is instance-local — a write on one instance does not invalidate L1 elsewhere, so use it only where a few seconds of cross-instance staleness is acceptable. Keep L1 TTL well below L2 TTL or a targeted L2 invalidation still serves stale data from L1. In-process caches have hard per-value size limits — check the set error rather than failing silently. Measure serialization/compression cost; on very hot paths it can exceed the round-trip it saves.
-
-### TTL jitter — always
-
-Any time many keys are written together (batch refresh, prewarming, startup) they expire together without jitter, stampeding the origin. Jitter at write time, always.
-
-```go
-// TTL uniformly sampled from [base, base+jitter).
-func ttlWithJitter(base, jitter time.Duration) time.Duration {
-    return base + time.Duration(rand.Int63n(int64(jitter)+1))
-}
-
-cache.Set(ctx, key, val, ttlWithJitter(24*time.Hour, 4*time.Hour))
-```
-
-For data that expires at a fixed wall-clock moment, compute `expiry.Sub(time.Now())` then add jitter on top. Guard against a zero jitter window (`rand.Int63n(0)` panics).
-
-### Request coalescing (collapse duplicate concurrent loads)
-
-When many goroutines miss the cache for the same key at once, they all hit the origin (cache stampede). `singleflight` ensures one in-flight load per key; the rest wait and share the result.
-
-```go
-import "golang.org/x/sync/singleflight"
-
-var group singleflight.Group
-
-func loadCoalesced(ctx context.Context, key string) (Value, error) {
-    v, err, _ := group.Do(key, func() (any, error) {
-        return loadFromOrigin(ctx, key)
-    })
-    if err != nil {
-        return Value{}, err
-    }
-    return v.(Value), nil
-}
-```
-
-`singleflight` is the idiomatic Go answer to the stampede problem — reach for it before hand-rolling a lock map.
-
-### Pipelined batch get/set
-
-Fetch or write many keys in one round-trip instead of one per key. Queue commands, flush once, resolve by position.
-
-```go
-func batchGet[T any](ctx context.Context, pipe Pipeliner, keys []string) ([]T, error) {
-    cmds := make([]Cmd, len(keys))
-    for i, k := range keys {
-        cmds[i] = pipe.Get(ctx, k) // queued, not sent
-    }
-    if err := pipe.Exec(ctx); err != nil { // single flush
-        return nil, err
-    }
-    out := make([]T, len(keys))
-    for i, c := range cmds {
-        _ = c.Decode(&out[i]) // per-key errors are visible only here, not from Exec
-    }
-    return out, nil
-}
-```
-
-`Exec` returns one top-level error; individual command errors surface only when you decode each result — always check per-key, not just the top level. Hash-field set + TTL needs two flushes (set, then expire) since there's no atomic combined command.
-
----
-
-## 12. Resilience
-
-### Rate limiting
-
-In-process, single instance: a token bucket via `golang.org/x/time/rate`.
-
-```go
-limiter := rate.NewLimiter(rate.Limit(100), 200) // 100/s, burst 200
-if !limiter.Allow() {
-    return ErrRateLimited
-}
-```
-
-Across replicas: a shared atomic check in the cache tier (sliding or fixed window). The non-negotiable rule is **fail open** — if the shared store is unavailable, allow the request:
-
-```go
-func (rl *sharedLimiter) Allow(ctx context.Context, key string) bool {
-    allowed, err := rl.store.CheckAndIncrement(ctx, key, rl.limit, rl.window)
-    if err != nil {
-        return true // fail open — the limiter must never become a hard dependency
-    }
-    return allowed
-}
-```
-
-A limiter that rejects traffic when its own backing store is down has inverted its risk. Choose the limit key granularity (per-user / per-IP / per-tenant) at call time to control blast radius. A sliding window avoids the burst spike a fixed window allows at its boundary.
-
-### Retry: split total vs per-attempt timeout
-
-A total-only timeout makes retries useless — a slow first attempt eats the whole budget. Bound each attempt and the whole operation separately, gate retries behind a flag, and never auto-retry non-idempotent calls.
-
-```go
-func callWithRetry(ctx context.Context, totalTimeout, perTry time.Duration, retry bool) (*Result, error) {
-    ctx, cancel := context.WithTimeout(ctx, totalTimeout)
-    defer cancel()
-    return client.Call(ctx, withPerTryTimeout(perTry), withRetry(retry))
-}
-```
-
-Put the retry toggle behind a runtime flag: under load, retries amplify pressure on an already-degraded dependency, and a flag lets you cut them instantly without a deploy. For background/side-effect paths, a bounded fixed-count retry (no backoff) is fine; for latency-sensitive primary paths, use backoff + jitter and check `ctx.Done()` between attempts.
-
-### Graceful degradation (serve last-known-good)
-
-When a critical dependency fails on a high-traffic read path, serve a pre-cached last-known-good response instead of an error. On each healthy response, snapshot it (guarded so you snapshot at most once per key per TTL); on failure, serve the snapshot.
-
-```go
-// write path (hot path stays non-blocking)
-func snapshotIfStale(ctx context.Context, key string, data []byte) {
-    if exists, _ := cache.Has(ctx, snapshotKey(key)); exists {
-        return // idempotency guard — prevents a snapshot storm under load
-    }
-    _ = cache.Set(ctx, snapshotKey(key), true, ttlWithJitter(base, jitter))
-    bg := detach(ctx) // copy values, drop the request deadline
-    go func() {
-        defer recoverPanic(bg)
-        if err := store.Put(bg, key, data); err != nil {
-            _ = cache.Delete(bg, snapshotKey(key)) // roll back the guard so the next request retries
-        }
-    }()
-}
-
-// read path
-func getOrDegrade(ctx context.Context, key string) (*Result, error) {
-    if shouldDegrade(ctx) { // kill switch / health signal / sampling
-        return fetchSnapshot(ctx, key)
-    }
-    return fetchLive(ctx, key)
-}
-```
-
-Key lessons: the snapshot write must run on a **detached context** (values copied, deadline dropped) so it survives after the request returns. The idempotency guard with jittered TTL prevents every request under load from spawning a write. Propagate the "degrade" decision as a typed field on a request-scoped struct, not buried in `context.Value`, so it's visible and loggable. Roll back the guard if the write fails.
-
----
-
-## Choosing fast — summary
-
-| You need | Reach for |
-|----------|-----------|
-| Cap simultaneous goroutines | semaphore channel (§1) |
-| Stable goroutine count over a job stream | fixed worker pool (§2) |
-| Fan-out, tolerate partial failure | WaitGroup + buffered channel (§3) |
-| Fan-out, all-or-nothing, cancel on first error | `errgroup.WithContext` (§4) |
-| Fire one call early, await later | typed async loader (§5) |
-| One-line "future", no error | generic `Async[T]` (§6) |
-| Bound one call's latency | `context.WithTimeout` + select (§7) |
-| Collapse duplicate concurrent loads | `singleflight` (§11) |
-| Survive a dependency outage on a read path | last-known-good degradation (§12) |

@@ -33,7 +33,7 @@ Turn a single YouTube video into a markdown note in your notes vault — a note 
 ### Code conventions
 
 #### `siddhartha-go`
-My Go backend coding conventions and architecture patterns — project structure, service/repository layering, Uber Fx DI, Ent ORM, error handling, testing with in-memory repos, and the preferred stack. Useful as a style guide for Go backend work or for keeping collaborators consistent.
+My Go backend engineering conventions, organized as a compact decision workflow plus task-specific references. The core covers explicit result contracts, boundary-first design, testability, operability, vertical slices, and verification. Focused references cover service/repository layering, APIs, persistence, concurrency and resilience, gRPC and observability, runtime configuration, and data-shaping patterns. The language-agnostic core can guide other backend languages without importing Go-specific libraries or structure.
 
 #### `siddhartha-flutter`
 My Flutter app conventions and architecture — feature-first MVVM (View → ViewModel → Repository → data-sources), the preferred stack (Riverpod 3, freezed, dio + retrofit, go_router, drift), the three-model (DTO/domain/view-state) wall, a sealed `Failure` error pipeline, opt-in offline-first sync, and a copy-per-feature vertical slice. Useful as a style guide for Flutter work or for keeping collaborators consistent.

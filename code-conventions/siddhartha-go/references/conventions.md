@@ -1,6 +1,47 @@
 # Foundational Conventions — Code Examples
 
-Full code for the conventions summarized in `SKILL.md` (Architecture, Errors, API, HTTP, Database, Testing, Config). Read this when implementing any of those layers — SKILL.md carries the rules, this carries the worked examples. The examples use a simple expense/group domain for illustration.
+Detailed rules and code examples for project structure, architecture, errors, API, HTTP, database, testing, configuration, comments, and stack choices. Read only the sections needed for the current task. The examples use a simple expense/group domain for illustration.
+
+## Contents
+
+- [Project structure and naming](#project-structure-and-naming)
+- [Entry point](#entry-point)
+- [Service and repository pattern](#service--repository-pattern)
+- [Dependency injection](#dependency-injection-uber-fx)
+- [Error handling](#error-handling)
+- [API design](#api-design)
+- [HTTP layer](#http-layer-gin)
+- [Database](#database-ent)
+- [Testing](#testing)
+- [Configuration](#config)
+- [Comments](#comments)
+- [Preferred stack](#preferred-stack)
+
+---
+
+## Project structure and naming
+
+Keep application code inside `internal/`. Root-level Go code is limited to `cmd/` entry points and an optional `embed.go`.
+
+```text
+cmd/<app>/main.go
+internal/
+  api/v1/
+  api/dto/
+  api/router.go
+  domain/<entity>/
+  service/<entity>.go
+  repository/<store>/
+  config/config.go
+  errors/errors.go
+```
+
+- Packages are short, lowercase, singular words such as `api`, `config`, `service`, and `dto`.
+- Types and exported functions use PascalCase. Unexported identifiers use camelCase. Variables stay short and contextual.
+- Enums include a named type, constants, a `String()` method, and a `Parse*()` constructor.
+- Incoming conversions use `from*`; outgoing conversions use `to*`.
+- Interfaces have concept names without an `I` prefix. Implementations are unexported when callers only need the interface.
+- Files use lowercase names and underscores for multiple words. Keep one domain entity per file in each layer.
 
 ---
 
@@ -178,11 +219,11 @@ func ErrorHandler() gin.HandlerFunc {
 
 Handlers just call `c.Error(err)` and return.
 
-**Best-effort operations** (cache writes, background side effects) swallow errors silently:
+**Best-effort operations** do not fail the primary operation. Record an operationally meaningful failure through a bounded log or metric. Silence it only when the failure is intentionally unobservable:
 
 ```go
 if err := cache.Set(key, val); err != nil {
-    return // cache is best-effort
+    metrics.CacheWriteFailure(ctx, "expense")
 }
 ```
 
@@ -228,6 +269,8 @@ func WithSettled(s bool) ListOption     { return func(o *listOptions) { o.settle
 ## HTTP layer (Gin)
 
 Always `gin.New()`, never `gin.Default()` — control the middleware stack explicitly. Order: `RequestID → Logging → CORS → Auth → ErrorHandler`.
+
+Expose the service health check at `GET /health`. Do not use `/healthz`.
 
 **Typed context keys** — set in auth middleware, read via typed getters (never raw `ctx.Value`):
 
@@ -410,3 +453,29 @@ viper.AutomaticEnv()
 ```
 
 Build-time vars via ldflags: `var ( version = "dev"; commit = "none"; buildTime = "unknown" )`.
+
+---
+
+## Comments
+
+Comment only a hidden constraint, invariant, workaround, or surprising tradeoff. Do not add file headers, numbered process comments, or comments that restate the code. Every exported symbol still gets its normal one-line Go documentation comment.
+
+---
+
+## Preferred stack
+
+| Concern | Backend | CLI |
+| --- | --- | --- |
+| HTTP / RPC | Gin; gRPC with dependency-ordered interceptors | N/A |
+| Database | Ent with Postgres | `modernc.org/sqlite` through raw SQL |
+| Static config | Viper and godotenv | Koanf |
+| Dependency injection | Uber Fx | Manual construction |
+| Testing | Standard library plus testify/suite and in-memory repositories | Standard library |
+| Concurrency | `errgroup`, `x/sync/semaphore`, `singleflight`, and standard library sync | Standard library sync |
+| Caching | In-process L1 plus Redis L2 with TTL jitter | N/A |
+| Rate limiting | `x/time/rate`; shared-store checks fail open | N/A |
+| Observability | Context-bound structured logger, typed metrics, tracer interface | N/A |
+| Workflows | Temporal | N/A |
+| Authentication | OAuth2 with PKCE | `zalando/go-keyring` |
+| Logging | zap or zerolog | fatih/color to stderr |
+| CLI framework | N/A | Cobra |

@@ -1,6 +1,18 @@
 # Data-Structure & Algorithm Idioms
 
-Reusable algorithmic patterns for list-shaping, matching, dedup, and slot placement — the kind of thing that recurs in ranking, ranked-list assembly, and feed construction. Read this when you're scoring/matching strings, deduplicating typed records, interleaving streams, or partitioning by a runtime cap. Summarized in `SKILL.md`'s Idioms section.
+Reusable algorithmic patterns for list shaping, matching, deduplication, and slot placement. Read this when scoring strings, deduplicating typed records, interleaving streams, or partitioning by a runtime cap.
+
+## Contents
+
+- [1. Normalized fuzzy match](#1-normalized-fuzzy-match-score-levenshtein-01-with-a-trim-flag)
+- [2. Bitmask-pruned trie](#2-bitmask-pruned-trie-for-fuzzy--subsequence-lookup)
+- [3. Rotate-to-front promotion](#3-rotate-to-front-promotion)
+- [4. Composite-key deduplication](#4-composite-key-seen-set-dedup-with-alias-keys)
+- [5. Fixed-slot interleave](#5-fixed-slot-interleave-of-two-streams)
+- [6. Weighted scoring](#6-multi-factor-weighted-scoring-in-a-comparator)
+- [7. Exclusion membership](#7-exclusion-set-membership-with-a-self-include-guard)
+- [8. Per-type quota](#8-per-type-quota-in-a-single-collect-pass)
+- [9. Offset-day lookup](#9-offset-day-trick-for-branchless-cross-midnight-lookup)
 
 All sketches use neutral names (`Item`, `Entry`, `candidate`, `score`).
 
