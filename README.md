@@ -60,6 +60,11 @@ Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch
 
 - Requires: the beads issue tracker (`bd`) available in the repo.
 
+### Design
+
+#### `marketing-assets`
+Build a repo's marketing asset pipeline end to end: read the brand from the logo, colors, and type already in the repo, agree a direction, then produce templates, art, copy, and rendered social and print assets, with a review gate between each stage. Templates, content, and tests are checked in; rendered assets stay gitignored. Ships design rules for color, surfaces, type, and composition, plus a copy-patterns reference of headline moves with examples from well-known campaigns.
+
 ### CLI tooling
 
 #### `rem-cli`
@@ -102,6 +107,7 @@ video-research/    youtube-transcript-research, -dlp, youtube-vault-note
 code-conventions/  siddhartha-go, siddhartha-flutter
 code-review/       review-coordinator, security-lens
 workflow/          groom-beads, ship-beads
+design/            marketing-assets
 cli-tooling/       rem-cli, ical-cli, healthsync, gtasks-cli
 ```
 
