@@ -74,7 +74,7 @@ Angled screens are unreadable and make UI look like paper. Never put a product s
 
 ## Stage 5 — Copy (gate)
 
-Write copy into one content JSON per campaign, render, and have the user review copy separately from art. Before drafting headlines, read [references/copy-patterns.md](references/copy-patterns.md) for the headline moves and which one fits each kind of post.
+Write copy into one content JSON per campaign, render, and have the user review copy separately from art. Before drafting headlines, read [references/what-makes-copy-work.md](references/what-makes-copy-work.md). It explains why headlines work or fail, and the questions to put to every draft before showing it.
 
 - **Every product claim traces to the docs.** List any claim you could not source and ask.
 - **A problem post carries its solution.** "You become the bottleneck" advertises the pain; "Stop being the bottleneck. *Let your team answer.*" sells the fix. The art shows the problem being solved too.

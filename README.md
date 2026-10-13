@@ -63,7 +63,7 @@ Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch
 ### Design
 
 #### `marketing-assets`
-Build a repo's marketing asset pipeline end to end: read the brand from the logo, colors, and type already in the repo, agree a direction, then produce templates, art, copy, and rendered social and print assets, with a review gate between each stage. Templates, content, and tests are checked in; rendered assets stay gitignored. Ships design rules for color, surfaces, type, and composition, plus a copy-patterns reference of headline moves with examples from well-known campaigns.
+Build a repo's marketing asset pipeline end to end: read the brand from the logo, colors, and type already in the repo, agree a direction, then produce templates, art, copy, and rendered social and print assets, with a review gate between each stage. Templates, content, and tests are checked in; rendered assets stay gitignored. Ships design rules for color, surfaces, type, and composition, plus a reference on what makes copy work, which reasons from well-known campaign lines to the questions an agent should put to its own drafts.
 
 ### CLI tooling
 
