@@ -63,7 +63,9 @@ Autonomous end-to-end pipeline for shipping a groomed beads issue: claim, branch
 ### Design
 
 #### `marketing-assets`
-Build a repo's marketing asset pipeline end to end: read the brand from the logo, colors, and type already in the repo, agree a direction, then produce templates, art, copy, and rendered social and print assets, with a review gate between each stage. Templates, content, and tests are checked in; rendered assets stay gitignored. Ships design rules for color, surfaces, type, and composition, plus a reference on what makes copy work, which reasons from well-known campaign lines to the questions an agent should put to its own drafts.
+Build a repo's marketing asset pipeline end to end, for stills and for motion: read the brand from the logo, colors, and type already in the repo, agree a direction, then produce templates, art, copy, and rendered social and print assets, plus product videos and animated posts built with Remotion, with a review gate between each stage. Templates, content, scene components, and tests are checked in; rendered assets and exported video stay gitignored. Ships design rules for color, surfaces, type, composition, and motion, with three references: what makes copy work, why and how things should move in a marketing video (pacing, easing, the product camera, depth and 3D), and the Remotion engine rules, project structure, tests, and export checks.
+
+- Requires for motion: Node.js and a Remotion project (the skill scaffolds one), plus `ffmpeg`/`ffprobe` to verify exports.
 
 ### CLI tooling
 
